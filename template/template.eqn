@@ -1,0 +1,124 @@
+# This file defines the equation set being solved.
+#
+# Specified here are:
+#  -  Equation-specific parameters
+#  -  Initial condition 
+#  -  Boundary conditions
+#  -  Residual terms
+#  -  Outputs 
+
+EqnSetLibrary = libCompressibleNS.so
+
+
+#------------------------------#
+# Equation-specific parameters #
+#------------------------------#
+
+STARTBLOCK PARAM
+
+SpecificHeatRatio = 1.4
+GasConstant = 0.4
+Viscosity = 0.1
+
+ENDBLOCK
+
+
+#----------------#
+# Residual terms #
+#----------------#
+
+STARTBLOCK RESTERM
+
+nResTerm = 2
+
+TermType = Convection
+InteriorFlux = Standard
+FluxFunction = Roe
+
+TermType = Diffusion
+
+ENDBLOCK
+
+
+#---------------------#
+#  Initial condition  #
+#---------------------#
+
+STARTBLOCK IC
+
+ICType = FullState
+Data = 1.0 0 0 10
+AlterFunction = CosEnergyAlter 
+# drE r x y
+AlterData = 1.0 0.2 PULSEX PULSEY
+
+
+ENDBLOCK
+
+
+#-----------------------#
+#  Boundary conditions  #
+#-----------------------#
+
+STARTBLOCK BC
+
+nBC = 8
+
+BFGTitle = B1
+BCType = NoSlipHeat
+Data = 0.
+
+BFGTitle = B2
+BCType = NoSlipHeat
+Data = 0.
+
+BFGTitle = B3
+BCType = NoSlipHeat
+Data = 0.
+
+BFGTitle = B4
+BCType = NoSlipHeat
+Data = 0.
+
+BFGTitle = Right
+BCType = NoSlipHeat
+Data = 0.
+
+BFGTitle = Left
+BCType = NoSlipHeat
+Data = 0.
+
+BFGTitle = Bottom
+BCType = NoSlipHeat
+Data = 0.
+
+BFGTitle = Top
+BCType = NoSlipHeat
+Data = 0.
+
+ENDBLOCK
+
+
+#---------#
+# Outputs #
+#---------#
+
+STARTBLOCK OUTPUT
+
+nOutput = 2
+
+OutputName = B2x
+OutputType = BoundaryIntegral
+UsesFlux = True
+FluxComponentNames = XMomentum YMomentum
+FluxComponentWeights = 1 0
+BFGTitles = B2
+
+OutputName = B2y
+OutputType = BoundaryIntegral
+UsesFlux = True
+FluxComponentNames = XMomentum YMomentum
+FluxComponentWeights = 0 1
+BFGTitles = B2
+
+ENDBLOCK

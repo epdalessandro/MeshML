@@ -1,0 +1,34 @@
+#!/bin/bash
+
+# number of dof-target iterations
+ndoftgt=NDOFTGT
+
+# number of adaptive iterations
+nadapt=NADAPT
+
+# base name for case and output
+BASE="BASENAME"
+OUTPUT="Drag"
+
+for (( a=1; a<=$ndoftgt; a+=1 ))
+do
+    echo $a
+    ROOT="${BASE}$a"
+
+    rm -f $ROOT.dof $ROOT.out
+
+    for (( i=0; i<$nadapt; i+=1 ))
+    do
+        if [ "$i" -gt "9" ]
+        then
+            fxfa="${ROOT}_A$i.xfa"
+        else
+            fxfa="${ROOT}_A0$i.xfa"
+        fi
+        echo $fxfa
+        xf_Post -xfa $fxfa -output $OUTPUT | tail -n 2 | head -n 1 >> $ROOT.out
+        xf_Info $fxfa | grep -A2 State | grep ndof | awk '{print $3}' >> $ROOT.dof
+    done
+
+done
+

@@ -1,0 +1,8 @@
+*.log
+*.data
+*~
+*.~lock*
+old
+xfa
+naca_A*
+naca_B*

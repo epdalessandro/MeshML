@@ -1,0 +1,39 @@
+
+####### Case Information ####### 
+Restart = False
+InputFile = ../meshes/naca_quad_q3_728.gri
+SavePrefix = SAVEPREFIX
+EqnSetFile = EQNSETFILE
+InterpBasis = QuadLagrange
+InterpOrder = 0
+SpaceScheme = NewDG
+
+####### General Solver Information ####### 
+nIterNonlinear = 100
+nIterGMRESOuter = 10
+nIterGMRESInner = 200
+LinearSolver = GMRES
+Preconditioner = LineJacobi
+ResidualTolerance = 1e-6
+MinLinResDecreaseFactor = 1e-5
+
+###### Temporal parameters ####### 
+CFL = 1
+CFLIncreaseFactor = 100
+TimeScheme = MEBDF3
+Time = 0.0
+EndTime = 1
+nTimeStep = 40
+UnsteadyWriteInterval = 2
+
+####### Output Parameters #######
+LogOutput = B2x B2y
+
+###### Output Adjoint ######
+AdjointOutputs = None
+
+###### Unsteady error estimation ######
+UErrEstOn = False
+
+###### Adaptation ########
+AdaptIter = 0

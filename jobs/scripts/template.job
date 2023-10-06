@@ -1,0 +1,71 @@
+
+####### Case Information ####### 
+Restart = DORESTART
+InputFile = INPUTFILE
+SavePrefix = SAVEPREFIX
+EqnSetFile = naca.eqn
+GeometryFile = GEOMFILE
+InterpBasis = TriLagrange
+InterpOrder = INTERPORDER
+SpaceScheme = NewDG
+SequenceOrderAdd = SEQUENCEORDERADD
+
+####### General Solver Information ####### 
+TimeScheme = Steady
+NonlinearSolver = Newton
+LinearSolver = GMRES
+Preconditioner = LineJacobi
+nIterNonlinear = 500
+nIterGMRESOuter = 10
+nIterGMRESInner = 400
+ResidualTolerance = 1e-8
+MinLinResDecreaseFactor = 1e-5
+WriteResidual = False
+nSmoothLinear = 2
+CoarseCorrectionFlag = True
+CoarseCorrectionOrder = 1
+CoarseCorrectionIter = 10
+ViscStabFactor = 2
+
+###### State update parameters #####
+StateUpdateMethod = LineSearch
+LineSearchRelaxFactor = 2.0
+MinUpdateFraction = .24
+
+###### Temporal parameters ####### 
+CFL = 1
+CFLIncreaseFactor = 1.5
+CFLMin = 1e-7
+
+####### Output Parameters ####### 
+Verbosity = Medium
+LogOutput = Drag Lift
+
+###### Adjoint parameters ####### 
+AdjointOutputs = ADAPTOUTPUT
+nIterAdjoint = 10
+AdjointResidualTolerance = 1e-8
+
+###### Error estimation ########
+FineSpace_LinearSolver = GMRES
+FineSpace_Preconditioner = LineJacobi
+FineSpace_nIterNonlinear = 0
+FineSpace_nIterAdjoint = 10
+FineSpace_AdjointResidualTolerance = 1e-8
+ErrEstStoreFineSpace = True
+
+###### Adaptation ########
+AdaptIter = 10
+AdaptOn = Output
+AdaptOutput = ADAPTOUTPUT
+AdaptTolerance = 1e-9
+AdaptFixedGrowthFactor = 1.5
+AdaptTargetCost = TARGETCOST
+AdaptHMechanics = Metric
+AdaptIsotropic = False
+AdaptHessianScalar = Mach
+CurveMeshMethod = LinElast
+AdaptMetricMinH = 1e-11
+AdaptOptimType = MOESS
+AdaptOptimMOESSErrorModel = Sampling
+

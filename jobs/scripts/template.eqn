@@ -1,0 +1,128 @@
+`# This file defines the equation set being solved.
+#
+# Specified here are:
+#  -  Equation-specific parameters
+#  -  Initial condition 
+#  -  Boundary conditions
+#  -  Residual terms
+#  -  Outputs 
+
+EqnSetLibrary = libCompressibleNS.so
+
+
+#------------------------------#
+# Equation-specific parameters #
+#------------------------------#
+
+STARTBLOCK PARAM
+
+SpecificHeatRatio = 1.4
+GasConstant = 0.4
+Viscosity = VISCOSITY
+SA_NonDim = SA_NONDIM
+ConstViscosity = True
+TurbModelVersion = SA_Negative2
+PrandtlNumber = 0.71
+RegularityScalar = Pressure
+
+ENDBLOCK
+
+
+#----------------#
+# Residual terms #
+#----------------#
+
+STARTBLOCK RESTERM
+
+nResTerm = 4
+
+TermType = Convection
+InteriorFlux = Standard
+FluxFunction = Roe
+
+TermType = Diffusion
+
+TermType = Source
+SourceFcn = Turbulence
+TurbModel = SA
+
+TermType = Diffusion
+Stabilization = Resolution
+ViscModel = Laplace
+
+ENDBLOCK
+
+
+#---------------------#
+#  Initial condition  #
+#---------------------#
+
+STARTBLOCK IC
+
+ICType = FullState
+Header = Density XMomentum YMomentum Energy TurbNutil
+Data = 1.0 COSALPHA SINALPHA TOTENERGY NUTILINF
+
+ENDBLOCK
+
+
+#-----------------------#
+#  Boundary conditions  #
+#-----------------------#
+
+STARTBLOCK BC
+
+nBC = 5
+
+BFGTitle = Airfoil
+BCType = NoSlipHeat
+Header = Q TurbNutil
+Data = 0.0 0.0
+
+BFGTitle = Left
+BCType = FullState
+Header = Density XMomentum YMomentum Energy TurbNutil
+Data = 1.0 COSALPHA SINALPHA TOTENERGY NUTILINF
+
+BFGTitle = Right
+BCType = FullState
+Header = Density XMomentum YMomentum Energy TurbNutil
+Data = 1.0 COSALPHA SINALPHA TOTENERGY NUTILINF
+
+BFGTitle = Bottom
+BCType = FullState
+Header = Density XMomentum YMomentum Energy TurbNutil
+Data = 1.0 COSALPHA SINALPHA TOTENERGY NUTILINF
+
+BFGTitle = Top
+BCType = FullState
+Header = Density XMomentum YMomentum Energy TurbNutil
+Data = 1.0 COSALPHA SINALPHA TOTENERGY NUTILINF
+
+ENDBLOCK
+
+
+#---------#
+# Outputs #
+#---------#
+
+STARTBLOCK OUTPUT
+
+nOutput = 2
+
+OutputName = Drag
+OutputType = BoundaryIntegral
+UsesFlux = True
+FluxComponentNames = XMomentum YMomentum
+FluxComponentWeights = COSALPHA SINALPHA
+BFGTitles = Airfoil
+
+OutputName = Lift
+OutputType = BoundaryIntegral
+UsesFlux = True
+FluxComponentNames = XMomentum YMomentum
+FluxComponentWeights = -SINALPHA COSALPHA
+BFGTitles = Airfoil
+
+
+ENDBLOCK
