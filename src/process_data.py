@@ -47,21 +47,6 @@ def plotmesh(Mesh, fname):
     plt.close(f)
 
 #-----------------------------------------------------------
-# Implements Heron's formula for area of a triangle
-def heron(s1, s2, s3):
-    s = 0.5 * (s1 + s2 + s3)
-    return (s * (s - s1) * (s - s2) * (s - s3)) ** 0.5
-
-# Returns the euclidean distance from a N-dimensional difference vector
-def euclidean_dist(vec: "list[float]") -> "list[float]":
-    dist = []
-    for elem in vec:
-        sum = 0
-        for idx in range(len(elem)):
-            sum += elem[idx] ** 2
-        dist.append(sum ** 0.5)
-    return dist
-
 # Reads in the wall/gradient distances from the points on each elements and returns a per-element average distance
 def processWallDistances(wName: str, gName: str):
     wallDistances, gradDistances = [], []
@@ -120,8 +105,6 @@ def processMesh(Mesh, wDist, gDist, num_run, paramFile) -> None:
             metric_system.append([x_diff ** 2, 2 * x_diff * y_diff, y_diff ** 2])
         centroid /= numSides
 
-        # lengths = euclidean_dist(sides) # get side lengths
-        # area = heron(lengths[0], lengths[1], lengths[2])
         try: # If the matrix is non-singular we can use np.linalg.solve
             solution = np.linalg.solve(np.array(metric_system), np.array([1,1,1]))
         except np.linalg.LinAlgError: # Otherwise use linalg.lstsq for the least squares solution
