@@ -84,8 +84,8 @@ def getReynoldsNumber(mu: float, u: float, L: float, rho: float) -> float:
 def getInputs(Mesh, wDist, gDist, )
 
 # Processes the mesh to obtain the input data and the labels for training
-def processMesh(Mesh, wDist, gDist, num_run, paramFile) -> None:
-    numSides = 3
+def processMesh(Mesh: dict[str, float], wDist: "list[float]", gDist: "list[float, float]", num_run: int, paramFile: str) -> None:
+    numSides = 3 # Number of sides of a triangle, no magic numbers today!
     x = np.empty([len(Mesh['E']), numInputs]) # preallocate input array
     y = np.empty([len(Mesh['E']), numOutputs]) # preallocate label array
 
@@ -118,13 +118,24 @@ def processMesh(Mesh, wDist, gDist, num_run, paramFile) -> None:
 
 #-----------------------------------------------------------
 # Print out the training data in CSV format
-def printTrainingData(x: np.ndarray, y: np.ndarray, filename: str) -> None:
+def printData(filename: str, x: np.ndarray=np.empty(0), y: np.ndarray=np.empty(0)) -> None:
+    xHeader = ["X_Pos", "Y_Pos", "Wall_Dist", "G_Wall_Dist_X", "G_Wall_Dist_Y", "AoA", "M", "Re"]
+    yHeader = ["A", "B", "C"]
+    header = []
+
+    if(x != np.empty(0)): header += xHeader
+    if(y != np.empty(0)): header += yHeader
+    
     with open(filename, "w") as fileID:
-        print("X_Pos", "Y_Pos", "Wall_Dist", "G_Wall_Dist_X", "G_Wall_Dist_Y", "AoA", "M", "Re",
-              "A", "B", "C", sep=",", file=fileID) # Print the header
-        for idx in range(x.shape[0]):
-            print(*x[idx], *y[idx], file=fileID, sep=",") # Print the data row by row
-        
+        print(header, sep=",", file=fileID) # Print the header
+
+        if(len(header) == numInputs + numOutputs): # Both inputs
+            for idx in range(x.shape[0]): print(*x[idx], *y[idx], file=fileID, sep=",")
+        elif(len(header) == numInputs): # Only X input
+            for idx in range(x.shape[0]): print(*x[idx], file=fileID, sep=",")
+        else: # Only Y input
+            for idx in range(y.shape[0]): print(*y[idx], file=fileID, sep=",")
+
 #-----------------------------------------------------------
 def plotMeshMetric(x, y, Mesh):
     # Set up figure
@@ -149,18 +160,24 @@ def plotMeshMetric(x, y, Mesh):
     plt.close(f)
 
 #-----------------------------------------------------------
-# Takes 3 command line arguments as relative paths: 
-# The Mesh .gri file, the Wall Distance and Gradient Wall Distance files, the output file and the run number
 def main():
-    args = [name for name in sys.argv]
-    Mesh = readgri(args[1])
+    if(len(sys.argv) != 6):
+        print("Incorrect Usage; Correct Usage - process_data meshFile wDistFile gWallDistFile outputDataFile runNum paramFile")
 
-    wDist, gDist = processWallDistances(args[2], args[3])
+    meshFile = sys.argv[1]
+    wDistFile = sys.argv[2]
+    gWallDistFile = sys.argv[3]
+    outputDataFile = sys.argv[4]
+    runNum = sys.argv[5]
+    paramFile = sys.argv[6]
+
+    Mesh = readgri(meshFile)
+    wDist, gDist = processWallDistances(wDistFile, gWallDistFile)
+    x, y = processMesh(Mesh, wDist, gDist, runNum, paramFile)
+    printData(x, y, outputDataFile)
+
     # plotmesh(Mesh, [])
-    x, y = processMesh(Mesh, wDist, gDist, int(args[5]), args[6])
     # plotMeshMetric(x,y,Mesh)
-
-    printTrainingData(x,y,args[4])
 
 if __name__ == "__main__":
     main()
