@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from scipy.linalg import logm
+from scipy.linalg import logm, expm
 from scipy.stats import zscore
 
 def read_data(filename: str) -> pd.DataFrame:
@@ -19,7 +19,7 @@ def clip_dataframe(in_df: pd.DataFrame, n_sigma) -> pd.DataFrame:
     df = in_df.copy()
     df["X_Pos"] = df.apply(lambda row: clip(row["X_Pos"], df["X_Pos"].std() * n_sigma, df["X_Pos"].mean()), axis=1)
     df["Y_Pos"] = df.apply(lambda row: clip(row["Y_Pos"], df["Y_Pos"].std() * n_sigma, df["Y_Pos"].mean()), axis=1)
-    df["Area"] = df.apply(lambda row: clip(row["Area"], df["Area"].std() * n_sigma, df["Area"].mean()), axis=1)
+    # df["Area"] = df.apply(lambda row: clip(row["Area"], df["Area"].std() * n_sigma, df["Area"].mean()), axis=1)
     df["Wall_Dist"] = df.apply(lambda row: clip(row["Wall_Dist"], df["Wall_Dist"].std() * n_sigma, df["Wall_Dist"].mean()), axis=1)
     df["G_Wall_Dist_X"] = df.apply(lambda row: clip(row["G_Wall_Dist_X"], df["G_Wall_Dist_X"].std() * n_sigma, df["G_Wall_Dist_X"].mean()), axis=1)
     df["G_Wall_Dist_Y"] = df.apply(lambda row: clip(row["G_Wall_Dist_Y"], df["G_Wall_Dist_Y"].std() * n_sigma, df["G_Wall_Dist_Y"].mean()), axis=1)
@@ -37,7 +37,12 @@ def standardize_dataframe(df: pd.DataFrame) -> pd.DataFrame:
 def metric_log(A, B, C):
     M = np.array([[A,B],[B,C]])
     log_metric = logm(M)
-    return log_metric[0,0], log_metric[0,1], log_metric[1,0]
+    return log_metric[0,0], log_metric[0,1], log_metric[1,1]
+
+def metric_exp(A, B, C):
+    M = np.array([[A,B],[B,C]])
+    exp_metric = expm(M)
+    return exp_metric[0,0], exp_metric[0,1], exp_metric[1,1]
 
 def remove_outliers(in_df: pd.DataFrame, n_sigma: int) -> pd.DataFrame:
     # zscore gets the number of standard deviations away a value is
@@ -55,12 +60,12 @@ def process_dataframe(in_df: pd.DataFrame) -> pd.DataFrame:
     df["G_Wall_Dist_X"] = df["G_Wall_Dist_X"] / df["G_Wall_Dist_X"].abs().max()
     df["G_Wall_Dist_Y"] = df["G_Wall_Dist_Y"] / df["G_Wall_Dist_Y"].abs().max()
 
-    df["Area"] = df["Area"] / df["Area"].abs().max() # TODO: Should I normalize this by max value?
+    # df["Area"] = df["Area"] / df["Area"].abs().max() # TODO: Should I normalize this by max value?
     df["AoA"] = df["AoA"] / df["AoA"].abs().max() # TODO: Should I normalize this by max value?
     df["M"] = df["M"] / df["M"].abs().max() # TODO: Should I normalize this by max value?
     df["Re"] = df["Re"] / df["Re"].abs().max() # TODO: Should I normalize this by max value?
 
-    df["A"], df["B"], df["C"] = zip(*df.apply(lambda row: metric_log(row["A"], row["B"], row["C"]), axis = 1))
+    # df["A"], df["B"], df["C"] = zip(*df.apply(lambda row: metric_log(row["A"], row["B"], row["C"]), axis = 1))
 
     # Don't normalize Re, alpha or Mach Number
     return df
