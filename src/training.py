@@ -3,10 +3,11 @@ import tensorflow as tf
 import matplotlib.pyplot as plt
 from preprocess_inputs import read_data, get_split
 from process_data import numInputs as numIn, numOutputs as numOut
-from xflow.mesh_generation.models.model import paper
-from xflow.mesh_generation.models.biggerH3 import biggerH3
-from xflow.mesh_generation.models.biggerH1H2 import biggerH1H2
-from xflow.mesh_generation.models.biggerHidden import biggerHidden
+from models.normal import normal
+from models.model import paper
+# from models.biggerH3 import biggerH3
+# from models.biggerH1H2 import biggerH1H2
+# from models.biggerHidden import biggerHidden
 import sys
 from os import path
 
@@ -15,8 +16,8 @@ from os import path
 bufferSize = 8192
 patience = 5
 
-def train_model_fit(model, checkpoint_callback, batchSize, x_train, y_train, x_val, y_val):
-    history = model.fit(x_train, y_train, batch_size=batchSize, epochs=100, validation_data=(x_val, y_val), callbacks=[checkpoint_callback])
+def train_model_fit(model, checkpoint_callback, patience_callback, batchSize, train_dataset_batches, val_dataset_batches):
+    history = model.fit(train_dataset_batches, batch_size=batchSize, epochs=100, validation_data=val_dataset_batches, callbacks=[checkpoint_callback, patience_callback])
     return history
 
 def train_model(model, train_dataset, val_dataset):
@@ -112,37 +113,8 @@ def plot_metrics(history, identifier, modelName):
     plt.savefig(identifier + modelName + ".png")
 
 def main():
-    # Parameters
-    k1 = 0.001 # Optimizer learning rate
-    optimizer_fn = tf.keras.optimizers.Adam(learning_rate=k1)
-    loss_fn = tf.keras.losses.MeanAbsolutePercentageError()
-    weight_init = tf.keras.initializers.RandomNormal(mean=0.0, stddev=0.5, seed=42)
-    bias_init = tf.keras.initializers.Zeros()
-
-    # Create the model
-    normal = tf.keras.Sequential([
-        tf.keras.layers.Dense(numIn,activation='relu', kernel_initializer=weight_init, bias_initializer=bias_init,
-                              kernel_regularizer=tf.keras.regularizers.L2(0.1), 
-                              bias_regularizer=tf.keras.regularizers.L2(0.1)),
-        tf.keras.layers.BatchNormalization(),
-        tf.keras.layers.Dense(100,activation='relu', kernel_initializer=weight_init, bias_initializer=bias_init,
-                              kernel_regularizer=tf.keras.regularizers.L2(0.1), 
-                              bias_regularizer=tf.keras.regularizers.L2(0.1)),
-        tf.keras.layers.BatchNormalization(),
-        tf.keras.layers.Dense(numOut,activation='relu', kernel_initializer=weight_init, bias_initializer=bias_init,
-                              kernel_regularizer=tf.keras.regularizers.L2(0.1), 
-                              bias_regularizer=tf.keras.regularizers.L2(0.1))
-    ])
-    normal.compile(optimizer=optimizer_fn, loss=loss_fn, metrics=[tf.keras.metrics.MeanSquaredError(),
-                                                                 tf.keras.metrics.MeanAbsoluteError(),
-                                                                 tf.keras.metrics.MeanAbsolutePercentageError()])
-
     # Get Data
     processed_df = read_data(sys.argv[1])
-    processed_df.drop(columns=["Area"]) # remove area column, #TODO: redo this
-    print(processed_df.head())
-    processed_df.info()
-    # print(processed_df.isnull().sum())
 
     train, val, test = get_split(processed_df, train_split=0.8, val_split=0.1, test_split=0.1)
 
@@ -153,35 +125,36 @@ def main():
 
     # Compile the partitions into a single dataset, shuffle and then batch them
     train_dataset = tf.data.Dataset.from_tensor_slices((x_train, y_train))
+    val_dataset = tf.data.Dataset.from_tensor_slices((x_val, y_val))
+    test_dataset = tf.data.Dataset.from_tensor_slices((x_test, y_test))
 
     batchSize = int(sys.argv[2])
     # Get a uniformly random shuffle of all elements
-    train_dataset = train_dataset.shuffle(buffer_size=np.shape(train)[0]).batch(batchSize, drop_remainder=False) 
-    val_dataset = tf.data.Dataset.from_tensor_slices((x_val, y_val)).batch(batchSize, drop_remainder=False)
-    test_dataset = tf.data.Dataset.from_tensor_slices((x_test, y_test)).batch(batchSize, drop_remainder=False)
+    train_dataset_batches = train_dataset.shuffle(buffer_size=np.shape(train)[0]).batch(batchSize, drop_remainder=False) 
+    # Don't shuffle validation, might want to read in a specific order for debugging
+    val_dataset_batches = val_dataset.batch(batchSize, drop_remainder=False)
+    test_dataset_batches = test_dataset.shuffle(buffer_size=np.shape(test)[0]).batch(batchSize, drop_remainder=False)
 
-    models = [paper]#[normal, paper, biggerH1H2, biggerH3, biggerHidden]
-    modelNames = ["paper"]#["normal", "paper", "biggerH1H2", "biggerH3", "biggerHidden"]
+    models = [normal, paper]#, biggerH1H2, biggerH3, biggerHidden]
+    modelNames = ["normal", "paper"]#, "biggerH1H2", "biggerH3", "biggerHidden"]
 
     for modelIdx in range(len(models)):
-        # models[modelIdx].build(x_train.shape)
-        # print(modelNames[modelIdx])
-        # print(models[modelIdx].summary())
 
-        checkpoint_path = "../checkpoints/" + modelNames[modelIdx] + "Models/cp-{epoch:04d}.ckpt"
-        # checkpoint_directory = path.dirname(checkpoint_path)
+        # checkpoint_path = "../checkpoints/" + modelNames[modelIdx] + "Models/cp-{epoch:04d}.ckpt"
+        checkpoint_path = "../checkpoints/" + modelNames[modelIdx] + "BestWeights.ckpt"
         checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(filepath=checkpoint_path, verbose=1, 
-                                                        save_best_only=True, monitor="mean_absolute_percentage_error", 
+                                                        save_best_only=True, monitor="val_mean_squared_error", 
                                                         mode="min", save_weights_only=True)
+        patience_callback = tf.keras.callbacks.EarlyStopping(monitor="val_mean_squared_error", patience=10, mode="min", restore_best_weights=True, start_from_epoch=10)
 
         # Train the model
-        history = train_model_fit(models[modelIdx], checkpoint_callback, batchSize, x_train, y_train, x_val, y_val)
+        history = train_model_fit(models[modelIdx], checkpoint_callback, patience_callback, batchSize, train_dataset_batches, val_dataset_batches)
         plot_metrics(history, str(batchSize), modelNames[modelIdx])
 
         # Evaluate Model
         test_model_evaluate(models[modelIdx], batchSize, x_test, y_test, modelNames[modelIdx])
 
-# python3 training.py "../data/9_21_23/processed_clipped_data.csv" 1024/2048
+# python3 training.py "../data/processed_clipped_data.csv" 1024/2048
 
 if __name__ == "__main__":
     main()

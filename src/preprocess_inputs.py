@@ -65,7 +65,7 @@ def process_dataframe(in_df: pd.DataFrame) -> pd.DataFrame:
     df["M"] = df["M"] / df["M"].abs().max() # TODO: Should I normalize this by max value?
     df["Re"] = df["Re"] / df["Re"].abs().max() # TODO: Should I normalize this by max value?
 
-    # df["A"], df["B"], df["C"] = zip(*df.apply(lambda row: metric_log(row["A"], row["B"], row["C"]), axis = 1))
+    df["A"], df["B"], df["C"] = zip(*df.apply(lambda row: metric_log(row["A"], row["B"], row["C"]), axis = 1))
 
     # Don't normalize Re, alpha or Mach Number
     return df
@@ -87,25 +87,43 @@ def get_split(df: pd.DataFrame, train_split: float=0.8, val_split: float=0.1,
 
 def main():
     # TODO: 5 standard deviations for clipping is an arbitrary value, figure out something else
+    print("Starting DF reading...")
     df = read_data("../data/aggregate_data.csv")
+    print("Finished reading DF!")
 
+    print("Started clipping")
     clipped_df = clip_dataframe(df,1)
+    print("Processing finished\nStarting printing")
     clipped_df.to_csv("../data/clipped_data.csv", index=False)
+    print("Finished Clipping")
 
+    print("Started no outliers")
     no_outliers = remove_outliers(df, 3) # For a normal distribution >3 standard deviations is an outlier
+    print("Processing finished\nStarting printing")
     no_outliers.to_csv("../data/no_outliers_data.csv", index=False)
+    print("Finished No Outliers")
 
+    print("Started processing")
     processed_df_clipped = process_dataframe(clipped_df)
+    print("Processing finished\nStarting printing")
     processed_df_clipped.to_csv("../data/processed_clipped_data.csv", index=False)
+    print("Processing Finished")
 
+    print("Starting processing + no outliers")
     processed_df_outliers = process_dataframe(no_outliers)
+    print("Processing finished\nStarting printing")
     processed_df_outliers.to_csv("../data/processed_outlier_data.csv", index=False)
+    print("Finished processing + no outliers")
 
-    norm_clip_df = norm_process(df)
-    norm_clip_df.to_csv("../data/norm_clipped_data.csv", index=False)
+    # print("Starting norm processing")
+    # norm_clip_df = norm_process(df)
+    # print("Processing finished\nStarting printing")
+    # norm_clip_df.to_csv("../data/norm_clipped_data.csv", index=False)
+    # print("Finished norm processing")
 
-    norm_outlier_df = norm_process(df)
-    norm_outlier_df.to_csv("../data/norm_outlier_data.csv", index=False)
+    # print("")
+    # norm_outlier_df = norm_process(df)
+    # norm_outlier_df.to_csv("../data/norm_outlier_data.csv", index=False)
 
 if __name__ == "__main__":
     main()

@@ -81,10 +81,8 @@ def getFlowParameters(num_run: int, filename: str) -> float:
 def getReynoldsNumber(mu: float, u: float, L: float, rho: float) -> float:
     return rho*u*L/mu
 
-def getInputs(Mesh, wDist, gDist, )
-
 # Processes the mesh to obtain the input data and the labels for training
-def processMesh(Mesh: dict[str, float], wDist: "list[float]", gDist: "list[float, float]", num_run: int, paramFile: str) -> None:
+def processMesh(Mesh: "dict[str, float]", wDist: "list[float]", gDist: "list[float]", num_run: int, paramFile: str) -> None:
     numSides = 3 # Number of sides of a triangle, no magic numbers today!
     x = np.empty([len(Mesh['E']), numInputs]) # preallocate input array
     y = np.empty([len(Mesh['E']), numOutputs]) # preallocate label array
@@ -117,17 +115,17 @@ def processMesh(Mesh: dict[str, float], wDist: "list[float]", gDist: "list[float
     return x, y
 
 #-----------------------------------------------------------
-# Print out the training data in CSV format
+# Print out the data in CSV format
 def printData(filename: str, x: np.ndarray=np.empty(0), y: np.ndarray=np.empty(0)) -> None:
     xHeader = ["X_Pos", "Y_Pos", "Wall_Dist", "G_Wall_Dist_X", "G_Wall_Dist_Y", "AoA", "M", "Re"]
     yHeader = ["A", "B", "C"]
     header = []
 
-    if(x != np.empty(0)): header += xHeader
-    if(y != np.empty(0)): header += yHeader
+    if(x.size != 0): header += xHeader
+    if(y.size != 0): header += yHeader
     
     with open(filename, "w") as fileID:
-        print(header, sep=",", file=fileID) # Print the header
+        print(*header, sep=",", file=fileID) # Print the header
 
         if(len(header) == numInputs + numOutputs): # Both inputs
             for idx in range(x.shape[0]): print(*x[idx], *y[idx], file=fileID, sep=",")
@@ -161,20 +159,20 @@ def plotMeshMetric(x, y, Mesh):
 
 #-----------------------------------------------------------
 def main():
-    if(len(sys.argv) != 6):
+    if(len(sys.argv) != 7):
         print("Incorrect Usage; Correct Usage - process_data meshFile wDistFile gWallDistFile outputDataFile runNum paramFile")
 
     meshFile = sys.argv[1]
     wDistFile = sys.argv[2]
     gWallDistFile = sys.argv[3]
     outputDataFile = sys.argv[4]
-    runNum = sys.argv[5]
+    runNum = int(sys.argv[5])
     paramFile = sys.argv[6]
 
     Mesh = readgri(meshFile)
     wDist, gDist = processWallDistances(wDistFile, gWallDistFile)
     x, y = processMesh(Mesh, wDist, gDist, runNum, paramFile)
-    printData(x, y, outputDataFile)
+    printData(outputDataFile, x, y)
 
     # plotmesh(Mesh, [])
     # plotMeshMetric(x,y,Mesh)

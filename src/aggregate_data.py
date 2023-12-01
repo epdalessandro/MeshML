@@ -1,7 +1,7 @@
 import os
 import sys
 import numpy as np
-from process_data import printTrainingData
+from process_data import printData
 from process_data import numInputs as numIn, numOutputs as numOut
 
 def aggregate_data(dir: str, outFileName: str) -> None:
@@ -20,7 +20,7 @@ def aggregate_data(dir: str, outFileName: str) -> None:
                 data = [float(num) for num in line.split(",")]
                 x.append(data[0:numIn])
                 y.append(data[numIn:numIn+numOut])
-    printTrainingData(np.array(x), np.array(y), outFileName)
+    printData(outFileName, x=np.array(x), y=np.array(y))
 
 # Usage: aggregate_data.py dataDirectoryPath outputFileName
 def main():
